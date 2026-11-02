@@ -12,7 +12,7 @@
     { self, nixpkgs, ... }:
     let
       pname = "containers";
-      version = "0.1.0";
+      version = "0.2.0";
       systems = [
         "x86_64-linux"
         "aarch64-linux"
