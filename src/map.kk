@@ -137,10 +137,10 @@ pub fun eq(
 // Check wether two maps are equal. Requires Ord on the keys and Eq on the values.
 pub fun (==) (m, n, ?k/cmp, ?v/(==)) map/eq(m, n)
 
-// The empty map [{}] / [ø].
+// The empty map `{}` / `empty`.
 pub val empty = Map(empty)
 
-// Construct a singleton map [{key => value}].
+// Construct a singleton map `{key => value}`.
 pub fun single(key : k, value : v) : map<k, v>
     Map(single((key, value)))
 
@@ -392,8 +392,8 @@ pub fun update-with-key(
     m.insert(key, w)
 
 // Alters the value `v` at `key`, or absence thereof.
-// [alter] can be used to insert, delete, or update a value in a map.
-// In short : `alter(m, k, f)[k] ≡ f(m[k])`.
+// `alter` can be used to insert, delete, or update a value in a map.
+// In short : `alter(m, k, f)[k] == f(m[k])`.
 //
 // ```koka
 // fun f(_m : maybe<string>) Nothing
@@ -624,7 +624,7 @@ pub fun symmetric-difference(
         if n.has(k).not then z.insert(k, v) else z
 
 // Check whether the key sets of two maps are disjoint (i.e., their
-// [intersection] is empty).
+// `intersection` is empty).
 //
 // ```koka
 // fun example()
@@ -663,7 +663,7 @@ fun tuple2/second((a, b) : (a, b), f : b -> e c) : e (a, c)
 pub fun map(m : map<k, v>, f : v -> e w, ?cmp : (k, k) -> e order) : e map<k, w>
     m.set.fmap(_.second(f)).Map
 
-// Other name for [map].
+// Other name for `map`.
 pub fun fmap(m : map<k, v>, f : v -> e w, ?cmp : (k, k) -> e order) : e map<k, w>
     m.map(f)
 
@@ -781,7 +781,7 @@ pub fun values(m : map<k, v>) : list<v>
 pub fun keys(m : map<k, v>) : list<k>
     m.list.map(_.fst)
 
-// Alias to [map/list].
+// Alias to `map/list`.
 pub fun assocs(m : map<k, v>) : list<(k, v)>
     m.list
 
@@ -811,7 +811,7 @@ pub fun without-keys(m : map<k, v>, s : set<k>, ?cmp : (k, k) -> e order) : e ma
 
 // Partition the map according to a predicate on the values. The first map
 // contains all elements that satisfy the predicate, the second all elements
-// that fail the predicate. See also [split].
+// that fail the predicate. See also `split`.
 //
 // ```koka
 // fun example()
@@ -825,7 +825,7 @@ pub fun partition(m : map<k, v>, p : v -> e bool, ?cmp : (k, k) -> e order) : e 
 
 // Partition the map according to a predicate on the pairs. The first map
 // contains all elements that satisfy the predicate, the second all elements
-// that fail the predicate. See also [split].
+// that fail the predicate. See also `split`.
 //
 // ```koka
 // fun example()
@@ -839,13 +839,13 @@ pub fun partition-with-key(m : map<k, v>, p : (k, v) -> e bool, ?cmp : (k, k) ->
 
 // Take while a predicate on the keys holds. The user is responsible for
 // ensuring that for all keys `j` and `k` in the map, `j < k ==> p j >= p k`.
-// See note at [span-antitone].
+// See note at `span-antitone`.
 pub fun take-while-antitone(m : map<k, v>, p : k -> e bool, ?cmp : (k, k) -> e order) : e map<k, v>
     m.set-op(_.take-while-antitone(_.fst.p))
 
 // Drop while a predicate on the keys holds. The user is responsible for
 // ensuring that for all keys `j` and `k` in the map, `j < k ==> p j >= p k`.
-// See note at [span-antitone].
+// See note at `span-antitone`.
 pub fun drop-while-antitone(m : map<k, v>, p : k -> e bool, ?cmp : (k, k) -> e order) : e map<k, v>
     m.set-op(_.drop-while-antitone(_.fst.p))
 
@@ -931,7 +931,7 @@ pub fun map-either-with-key(m : map<k, v>, f : (k, v) -> e either<l, r>, ?cmp : 
 pub fun split(m : map<k, v>, key : k, ?cmp : (k, k) -> e order) : e (map<k, v>, map<k, v>)
     m.filter-keys(_!= key).span-antitone(_< key)
 
-// `split-lookup(m, k)` splits a map just like [split] but also returns `m.lookup(k)`.
+// `split-lookup(m, k)` splits a map just like `split` but also returns `m.lookup(k)`.
 //
 // ```koka
 // fun example()
@@ -946,7 +946,7 @@ pub fun split-lookup(m : map<k, v>, key : k, ?cmp : (k, k) -> e order) : e (map<
     (l, m[key], r)
 
 // `is-submap-of(m, n)` returns `True` if all keys in m are in tree n, and when
-// `v/(==)` returns 'True' when applied to their respective values. For
+// `(==)` on `v` returns 'True' when applied to their respective values. For
 // example, the following expressions are all 'True':
 //
 // ```koka
@@ -968,7 +968,7 @@ pub fun split-lookup(m : map<k, v>, key : k, ?cmp : (k, k) -> e order) : e (map<
 pub fun is-submap-of(m : map<k, v>, n : map<k, v>, ?v/(==) : (v, v) -> e bool, ?k/cmp : (k, k) -> e order) : e bool
     m.keys.all fn(k) n.has(k) && m[k] == n[k]
 
-// Is this a proper submap? (ie. a submap but not equal). See [is-submap-of].
+// Is this a proper submap? (ie. a submap but not equal). See `is-submap-of`.
 pub fun is-proper-submap-of(m : map<k, v>, n : map<k, v>, ?v/(==) : (v, v) -> e bool, ?k/cmp : (k, k) -> e order) : e bool
     m != n && m.is-submap-of(n)
 

@@ -106,13 +106,13 @@ pub fun params/show(pa__derived_show : params)
   ++ ")"
 
 pub fun param/is-valid(Params(d1, d2, g1, g2): params): bool
-    d1 * 2 < d2 * 9                                                   // Δ < 4.5
-    && g1 * d2 + g2 * d2 <= g2 * d1                                   // Γ + 1 <= Δ
-    && g1 * d1 >= g2 * (d1 + d2)                                      // Γ >= (Δ+1)/Δ
-    && (not(5 * d2 <= 2 * d1 && d1 < 3 * d2)     || g1 * 2 <= g2 * 3) // 2.5 <= Δ < 3
-    && (not(3 * d2 <= d1     && 2 * d1 < 7 * d2) || g1 * 2 <= g2 * 4) // 3   <= Δ < 3.5
-    && (not(7 * d2 <= 2 * d1 && d1 < 4 * d2)     || g1 * 3 <= g2 * 4) // 3.5 <= Δ < 4
-    && (not(4 * d2 <= d1     && 2 * d1 < 9 * d2) || g1 * 3 <= g2 * 5) // 4   <= Δ < 4.5
+    d1 * 2 < d2 * 9                                                   // <Delta> < 4.5
+    && g1 * d2 + g2 * d2 <= g2 * d1                                   // <Gamma> + 1 <= <Delta>
+    && g1 * d1 >= g2 * (d1 + d2)                                      // <Gamma> >= (<Delta>+1)/<Delta>
+    && (not(5 * d2 <= 2 * d1 && d1 < 3 * d2)     || g1 * 2 <= g2 * 3) // 2.5 <= <Delta> < 3
+    && (not(3 * d2 <= d1     && 2 * d1 < 7 * d2) || g1 * 2 <= g2 * 4) // 3   <= <Delta> < 3.5
+    && (not(7 * d2 <= 2 * d1 && d1 < 4 * d2)     || g1 * 3 <= g2 * 4) // 3.5 <= <Delta> < 4
+    && (not(4 * d2 <= d1     && 2 * d1 < 9 * d2) || g1 * 3 <= g2 * 5) // 4   <= <Delta> < 4.5
 
 pub val afp/params      = Params(25, 10, 14, 10)
 pub val hirayama/params' = Params( 3,  1,  2,  1)
@@ -249,17 +249,17 @@ pub fun height(tree)
 // balanced1R :: Rational -> Tree a -> Tree a -> Bool
 // balanced1R d t1 t2 = fromInteger (size1 t1) <= d * fromInteger (size1 t2)
 //
-// -- | Isabelle: @WBT0.wbt@ (dengan Δ real).
+// -- | Isabelle: @WBT0.wbt@ (dengan <Delta> real).
 // validR :: Rational -> Tree a -> Bool
 // validR _ Leaf = True
 // validR d (Node l _ _ r) =
 //   balanced1R d l r && balanced1R d r l && validR d l && validR d r
 //
-// -- | α = 1/(Δ+1)
+// -- | <alpha> = 1/(<Delta>+1)
 // alpha :: Rational -> Rational
 // alpha d = 1 / (d + 1)
 //
-// -- | Batas atas tinggi: log2(size1 t) / log2(1 + 1/Δ).
+// -- | Batas atas tinggi: log2(size1 t) / log2(1 + 1/<Delta>).
 // heightBound :: Rational -> Tree a -> Double
 // heightBound d t =
 //   logBase 2 (fromInteger (size1 t)) / logBase 2 (1 + 1 / fromRational d)

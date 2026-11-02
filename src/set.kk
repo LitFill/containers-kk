@@ -17,21 +17,21 @@ fun two/tree-op(s1 : set<a>, s2 : set<b>, f : (wbt/tree<a>, wbt/tree<b>) -> e wb
 fun three/tree-op(s1 : set<a>, s2 : set<b>, s3 : set<c>, f : (wbt/tree<a>, wbt/tree<b>, wbt/tree<c>) -> e wbt/tree<d>) : e set<d>
     f(s1.tree, s2.tree, s3.tree).Set
 
-// The empty set [{}] / [ø].
+// The empty set `{}` / `empty`.
 pub val empty = empty.Set
 
-// Construct [set\<a>] from [list\<a>]. Requires a [?cmp] on [a].
+// Construct `set\<a>` from `list\<a>`. Requires a `?cmp` on `a`.
 pub fun list/set(xs : list<a>, ?cmp : (a, a) -> e order) : e set<a>
     xs.tree.Set
 
-// Convert from [set\<a>] into [list\<a>] in ascending order.
+// Convert from `set\<a>` into `list\<a>` in ascending order.
 pub fun list(s : set<a>) : list<a>
     s.tree.list
 
 fun list-op(s : set<a>, f : list<a> -> e list<b>, ?cmp : (b, b) -> e order) : e set<b>
     s.list.f.set
 
-// String representation of [set\<a>]. Uses [list/show].
+// String representation of `set\<a>`. Uses `list/show`.
 //
 // ```koka
 // fun example()
@@ -41,19 +41,19 @@ fun list-op(s : set<a>, f : list<a> -> e list<b>, ?cmp : (b, b) -> e order) : e 
 pub fun show(s : set<a>, ?a/show : a -> string) : string
     "set(" ++ s.list.show() ++ ")"
 
-// Set equality. Requires [?(==)] on [a].
+// Set equality. Requires `?(==)` on `a`.
 pub fun eq(s1 : set<a>, s2 : set<a>, ?a/(==) : (a, a) -> e bool) : e bool
     s1.tree == s2.tree
 
-// Set equality operator. Requires [?(==)] on [a].
+// Set equality operator. Requires `?(==)` on `a`.
 pub fun (==)(x : set<a>, y : set<a>, ?a/(==) : (a, a) -> e bool) : e bool
     eq(x, y)
 
-// Set ordering. require [?cmp] on [a].
+// Set ordering. require `?cmp` on `a`.
 pub fun cmp(s1 : set<a>, s2 : set<a>, ?a/cmp : (a, a) -> e order) : e order
     cmp(s1.list, s2.list)
 
-// Construct a singleton set [{x}].
+// Construct a singleton set `{x}`.
 pub fun single(x : a) : set<a>
     x.single.Set
 
@@ -87,9 +87,9 @@ pub fun list/powerset(xs : list<a>) : list<list<a>>
 pub fun list/unique(xs : list<a>, ?cmp : (a, a) -> e order) : e list<a>
     xs.set.list
 
-// Insert an element [x] of type [a] into a [set\<a>]. If the set already
+// Insert an element `x` of type `a` into a `set\<a>`. If the set already
 // contains an element equal to the given value, it is replaced with the new
-// value. Requires [?cmp] on [a].
+// value. Requires `?cmp` on `a`.
 //
 // ```koka
 // fun example()
@@ -102,7 +102,7 @@ pub fun insert(s : set<a>, x : a, ?cmp : (a, a) -> e order) : e set<a>
 pub fun insert-with(s : set<a>, x : a, f : (a, a) -> e a, ?cmp : (a, a) -> e order) : e set<a>
     s.tree-op(insert-with(x, _, f))
 
-// Flipped version of [insert].
+// Flipped version of `insert`.
 //
 // ```koka
 // fun example()
@@ -113,7 +113,7 @@ pub fun insert'(x : a, s : set<a>, ?cmp : (a, a) -> e order) : e set<a>
     insert(s, x)
 
 // Delete an element from a set. If the set doesn't contain an element equal to
-// the given value, it is ignored. Requires [?cmp] on [a].
+// the given value, it is ignored. Requires `?cmp` on `a`.
 //
 // ```koka
 // fun example()
@@ -127,12 +127,12 @@ pub fun delete(s : set<a>, x : a, ?cmp : (a, a) -> e order) : e set<a>
 pub fun member(s : set<a>, x : b, ?cmp : (b, a) -> e order) : e bool
     x.member(s.tree)
 
-// Check if the set [s] has the element [x].
+// Check if the set `s` has the element `x`.
 pub fun has(s : set<a>, x : b, ?cmp : (b, a) -> e order) : e bool
     member(s, x)
 
-// Pop an element from the set. Returns [Nothing] if the element is not a member
-// of the set. Otherwise returns [Just] the set with the element removed.
+// Pop an element from the set. Returns `Nothing` if the element is not a member
+// of the set. Otherwise returns `Just` the set with the element removed.
 //
 // ```koka
 // fun example()
@@ -142,7 +142,7 @@ pub fun has(s : set<a>, x : b, ?cmp : (b, a) -> e order) : e bool
 pub fun pop(s : set<a>, x : a, ?cmp : (a, a) -> e order) : e maybe<set<a>>
     if s.has(x) then Just(s.delete(x)) else Nothing
 
-// Return the maximum element of the set, or [Nothing] if empty.
+// Return the maximum element of the set, or `Nothing` if empty.
 //
 // ```koka
 // fun example()
@@ -152,7 +152,7 @@ pub fun pop(s : set<a>, x : a, ?cmp : (a, a) -> e order) : e maybe<set<a>>
 pub fun maximum(s : set<a>, ?cmp : (a, a) -> e order) : e maybe<a>
     s.tree.maximum
 
-// Return the minimum element of the set, or [Nothing] if empty.
+// Return the minimum element of the set, or `Nothing` if empty.
 //
 // ```koka
 // fun example()
@@ -218,19 +218,19 @@ pub fun union(s1 : set<a>, s2 : set<a>, ?cmp : (a, a) -> e order) : e set<a>
 pub fun union-with(s1 : set<a>, s2 : set<a>, f : (left : a, right : a) -> e a, ?cmp : (a, a) -> e order) : e set<a>
     tree-op(s1, s2, union-with(_, _, f))
 
-// Set append operator using [union].
+// Set append operator using `union`.
 pub fun (++)(s1 : set<a>, s2 : set<a>, ?cmp : (a, a) -> e order) : e set<a>
     union(s1, s2)
 
-// Set other append operator using [union].
+// Set other append operator using `union`.
 pub fun (+)(s1 : set<a>, s2 : set<a>, ?cmp : (a, a) -> e order) : e set<a>
     union(s1, s2)
 
-// [s1.is-subset-of(s2)] indicates whether s1 is a subset of s2.
+// `s1.is-subset-of(s2)` indicates whether s1 is a subset of s2.
 pub fun is-subset-of(s1 : set<a>, s2 : set<a>, ?cmp : (a, a) -> e order) : e bool
     union(s1, s2) == s2 // todo: refactor
 
-// [s1.is-proper-subset-of(s2)] indicates whether s1 is a proper subset of s2.
+// `s1.is-proper-subset-of(s2)` indicates whether s1 is a proper subset of s2.
 pub fun is-proper-subset-of(s1 : set<a>, s2 : set<a>, ?cmp : (a, a) -> e order) : e bool
     s1 != s2
     && s1.is-subset-of(s2)
@@ -251,7 +251,7 @@ pub fun foldl(s : set<a>, z : b, f : (b, a) -> e b) : e b
 pub fun foldr(s : set<a>, z : b, f : (a, b) -> e b) : e b
     s.list.foldr(z, f)
 
-// Flatten the set (e.g. concatenate them) using [union].
+// Flatten the set (e.g. concatenate them) using `union`.
 pub fun flatten(ss : set<set<a>>, ?cmp : (a, a) -> e order) : e set<a>
     ss.foldl(empty, union(_, _))
 
@@ -279,9 +279,9 @@ pub fun (-)(s1 : set<a>, s2 : set<a>, ?cmp : (a, a) -> e order) : e set<a>
 //
 // ```koka
 // type ab { A; B; }
-// fun ab/cmp(a : ab, b : ab) Eq
-// fun ab/(==)(a : ab, b : ab) True
-// fun ab/show(x : ab) match x {A -> "A"; B -> "B"}
+// fun cmp(a : ab, b : ab) Eq
+// fun (==)(a : ab, b : ab) True
+// fun show(x : ab) match x {A -> "A"; B -> "B"}
 // fun example()
 //   intersection([A].set, [B].set).show.println // prints: set([A])
 //   intersection([B].set, [A].set).show.println // prints: set([B])
@@ -345,7 +345,7 @@ pub fun cartesian-product(
 pub fun map(s : set<a>, f : a -> e b, ?cmp : (b, b) -> e order) : e set<b>
     s.list-op(_.map(f))
 
-// Lexicographical ordering of [either].
+// Lexicographical ordering of `either`.
 pub fun either/cmp(e1 : either<a, b>, e2 : either<a, b>, ?a/cmp : (a, a) -> e order, ?b/cmp : (b, b) -> e order) : e order
     match (e1, e2)
         (Left(x), Left(y)) -> cmp(x, y)
@@ -376,13 +376,13 @@ pub fun filter'(s : set<a>, f : a -> e bool, ?cmp : (a, a) -> e order) : e set<a
 
 // Take while a predicate on the elements holds. The user is responsible for
 // ensuring that for all elements j and k in the set, j < k ==> p j >= p k. See
-// note at [span-antitone].
+// note at `span-antitone`.
 pub fun take-while-antitone(s : set<a>, p : a -> e bool, ?cmp : (a, a) -> e order) : e set<a>
     s.list-op(_.take-while(p))
 
 // Drop while a predicate on the elements holds. The user is responsible for
 // ensuring that for all elements j and k in the set, j < k ==> p j >= p k. See
-// note at [span-antitone].
+// note at `span-antitone`.
 pub fun drop-while-antitone(s : set<a>, p : a -> e bool, ?cmp : (a, a) -> e order) : e set<a>
     s.list-op(_.drop-while(p))
 
@@ -390,7 +390,7 @@ pub fun drop-while-antitone(s : set<a>, p : a -> e bool, ?cmp : (a, a) -> e orde
 // The user is responsible for ensuring that for all elements j and k in the
 // set, j < k ==> p j >= p k.
 //
-// NOTE: if p is not actually antitone, then [span-antitone] will split the set at
+// NOTE: if p is not actually antitone, then `span-antitone` will split the set at
 // some unspecified point where the predicate switches from holding to not
 // holding (where the predicate is seen to hold before the first element and to
 // fail after the last element).
@@ -411,7 +411,7 @@ pub fun map-maybe(s : set<a>, f : a -> e maybe<b>, ?cmp : (b, b) -> e order) : e
 
 // Partition the set into two sets, one with all elements that satisfy the
 // predicate and one with all elements that don't satisfy the predicate. See
-// also [split].
+// also `split`.
 //
 // ```koka
 // fun example()
@@ -429,7 +429,7 @@ pub fun split(s : set<a>, x : a, ?cmp : (a, a) -> e order) : e (set<a>, set<a>)
     ( s.take-while-antitone(_< x)
     , s.drop-while-antitone(_<= x))
 
-// Performs a [split] but also returns whether the pivot element was found in
+// Performs a `split` but also returns whether the pivot element was found in
 // the original set.
 pub fun split-member(s : set<a>, x : a, ?cmp : (a, a) -> e order) : e (set<a>, bool, set<a>)
     ( s.take-while-antitone(_< x)
@@ -446,7 +446,7 @@ pub fun @index(s : set<a>, i : int) : maybe<a>
     s.list.@index(i)
 
 // Get (zero-based) element `ix`  of a set. Return a `:maybe` type.
-// See also [@index] for C-like indexing `s[ix]`.
+// See also `@index` for C-like indexing `s[ix]`.
 pub fun at(s : set<a>, ix : int) : maybe<a>
     s[ix]
 

@@ -11,6 +11,8 @@
   outputs =
     { self, nixpkgs, ... }:
     let
+      pname = "containers";
+      version = "0.1.0";
       systems = [
         "x86_64-linux"
         "aarch64-linux"
@@ -36,14 +38,30 @@
       kokaJson =
         pkgs:
         ''{"include_dirs":[${builtins.concatStringsSep "," (map (d: "\"${d}\"") (kokaLibsFor pkgs))}]}'';
+
+      srcFor =
+        pkgs:
+        pkgs.lib.cleanSourceWith {
+          name = "${pname}-source";
+          src = pkgs.lib.cleanSource self;
+          filter =
+            path: type:
+            !(builtins.elem (baseNameOf (toString path)) [
+              "result"
+              "koka.json"
+              ".koka"
+              ".koka-build"
+              ".direnv"
+              "docs"
+            ]);
+        };
     in
     {
 
       packages = forAllSystems (
         pkgs: system: {
           default = pkgs.stdenv.mkDerivation {
-            pname = "containers-kk";
-            version = "0.1.0";
+            inherit pname version;
             src = pkgs.lib.cleanSourceWith {
               src = self;
               filter =
@@ -83,6 +101,53 @@
               platforms = pkgs.lib.platforms.unix;
             };
           };
+
+          docs = pkgs.stdenv.mkDerivation {
+            pname = "${pname}-docs";
+            inherit version;
+            src = srcFor pkgs;
+
+            nativeBuildInputs = [
+              pkgs.koka
+            ];
+
+            dontConfigure = true;
+
+            buildPhase = ''
+              runHook preBuild
+
+              # The sandbox has a read-only, nonexistent $HOME; give koka
+              # somewhere writable in case it wants a cache/config dir.
+              export HOME="$TMPDIR"
+
+              # Invoked through bash explicitly: the build sandbox has no
+              # /usr/bin/env for the script's shebang to resolve.
+              # KOKA_FLAGS carries the dependency `--include` flags so the
+              # docs can be built for modules that import other libraries.
+              KOKA=${pkgs.koka}/bin/koka \
+              KOKA_FLAGS="${kokaLibArgs pkgs}" \
+              PROJECT_NAME=${pname} \
+                bash scripts/build-docs.sh docs
+
+              runHook postBuild
+            '';
+
+            installPhase = ''
+              runHook preInstall
+              test -n "$(ls -A docs)" || { echo "docs/ is empty" >&2; exit 1; }
+              mkdir -p "$out"
+              cp -r docs/. "$out/"
+              runHook postInstall
+            '';
+
+            # Cheap to build and not worth a remote builder round-trip.
+            preferLocalBuild = true;
+
+            meta = {
+              description = "API reference for this library";
+              platforms = pkgs.lib.platforms.unix;
+            };
+          };
         }
       );
 
@@ -100,12 +165,47 @@
         }
       );
 
+      apps = forAllSystems (
+        pkgs: system: {
+          docs = {
+            type = "app";
+            program = "${
+              pkgs.writeShellApplication {
+                name = "gen-docs";
+                runtimeInputs = [
+                  pkgs.koka
+                  pkgs.stdenv.cc # `koka -l` compiles C; not on PATH outside a devShell
+                  pkgs.bash # a recent bash for the script (macOS ships 3.2)
+                  pkgs.git
+                ];
+                text = ''
+                  # Selalu tulis ke <root repo>/docs, dari subfolder mana pun
+                  # perintah ini dijalankan.
+                  cd "$(git rev-parse --show-toplevel)"
+
+                  KOKA=${pkgs.koka}/bin/koka \
+                  KOKA_FLAGS="${kokaLibArgs pkgs}" \
+                  PROJECT_NAME=${pname} \
+                    bash scripts/build-docs.sh docs
+                '';
+              }
+            }/bin/gen-docs";
+          };
+        }
+      );
+
       devShells = forAllSystems (
         pkgs: system: {
-          default = pkgs.mkShell {
-            packages = [ pkgs.koka ];
-            shellHook = "printf '%s\\n' '${kokaJson pkgs}' > \"$PWD/koka.json\"";
-          };
+          default =
+            with pkgs;
+            mkShell {
+              packages = [
+                koka
+                shfmt
+                shellcheck
+              ];
+              shellHook = "printf '%s\\n' '${kokaJson pkgs}' > \"$PWD/koka.json\"";
+            };
         }
       );
 
