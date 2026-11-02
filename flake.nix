@@ -82,7 +82,7 @@
 
             buildPhase = ''
               runHook preBuild
-              koka -l --output=containers --builddir="$PWD/.koka-build" src/wbt.kk src/set.kk src/map.kk
+              koka -l --output=containers --builddir="$PWD/.koka-build" src/containers.kk src/containers/*
               runHook postBuild
             '';
 
@@ -90,9 +90,11 @@
             # `--include=<includePath>` and compile against these modules.
             installPhase = ''
               runHook preInstall
-              install -Dm644 src/wbt.kk $out/share/koka/${pkgs.koka.version}/wbt.kk
-              install -Dm644 src/set.kk $out/share/koka/${pkgs.koka.version}/set.kk
-              install -Dm644 src/map.kk $out/share/koka/${pkgs.koka.version}/map.kk
+              dest=$out/share/koka/${pkgs.koka.version}
+              mkdir -p $dest
+              cp src/containers.kk $dest/
+              cp -r src/containers $dest/
+              chmod -R u+w,a+r $dest
               runHook postInstall
             '';
 
