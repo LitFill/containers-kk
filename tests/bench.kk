@@ -12,6 +12,9 @@ val large = 100000
 fun bump(x : int) : int
   x + 1
 
+fun mod2(x : int) : bool
+  x % 2 == 0
+
 fun main()
   println("=== Union benchmark ===")
   val s1 = list(1, large).set
@@ -66,3 +69,9 @@ fun main()
   val m : map<int, int> = list(1, large).foldl((empty : map<int, int>)) fn(z, x) z.insert(x, x)
   val m2 = m.map(bump)
   println("map size: " ++ m2.size.show ++ "  sum: " ++ m2.foldl(0, fn(z, v) z + v).show)
+
+  println("\n=== Filter benchmark ===")
+  val ev = s1.filter(mod2)
+  println("filtered size: " ++ ev.size.show)
+  val mev = m.filter(mod2)
+  println("map filtered size: " ++ mev.size.show)

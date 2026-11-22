@@ -117,6 +117,24 @@ fun run-index(seed : int, r : int, rounds : int) : e maybe<int>
     else
       run-index(seed + 1, pretend-decreasing(r + 1), rounds)
 
+fun mod2(x : int) : bool
+  x % 2 == 0
+
+fun check-filter(seed : int) : e bool
+  val xs = build-list(seed, 30)
+  val s = xs.set
+  val kept = s.filter(mod2)
+  kept.list == xs.filter(mod2) && kept.is-valid
+
+fun run-filter(seed : int, r : int, rounds : int) : e maybe<int>
+  if r >= rounds then
+    Nothing
+  else
+    if not(check-filter(seed)) then
+      Just(seed)
+    else
+      run-filter(seed + 1, pretend-decreasing(r + 1), rounds)
+
 fun main()
   val result = run(1, 0, 50)
   match result
@@ -141,3 +159,10 @@ fun main()
       println("FAILED rank check at seed " ++ s.show)
       (1 / 0).println
   println("all rank-based indexing checks passed")
+
+  match run-filter(1, 0, 50)
+    Nothing -> ()
+    Just(s) ->
+      println("FAILED filter check at seed " ++ s.show)
+      (1 / 0).println
+  println("all filter checks passed")

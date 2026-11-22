@@ -298,6 +298,16 @@ pub fun difference(t1 : tree<a>, t2 : tree<a>, ?cmp : (a, a) -> e order, ?params
             val (l1, _, r1) = split(t1, y)
             merge(difference(pretend-decreasing(l1), l2), difference(pretend-decreasing(r1), r2))
 
+// filter: the elements satisfying `f`, rebuilt bottom-up with `link`/`merge`
+// rather than by re-inserting into an empty tree. O(n) expected.
+pub fun filter(tree: tree<a>, f: a -> e bool, ?params): e tree<a>
+    match tree
+        Leaf -> Leaf
+        Node(x, l, r, _) ->
+            val l' = filter(l, f)
+            val r' = filter(r, f)
+            if f(x) then link(x, l', r') else merge(l', r')
+
 pub fun union-with(
     t1 : tree<a>, t2 : tree<a>,
     f  : (left : a, right : a) -> e a,

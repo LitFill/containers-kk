@@ -386,12 +386,11 @@ pub fun disjoint-union(s1 : set<a>, s2 : set<b>, ?a/cmp : (a, a) -> e order, ?b/
 // Retain only those elements of a set that satisfy the given predicate `pred`.
 // For example: `filter([1,2,3].set,is-odd) == set([1,3])`
 pub fun filter(s : set<a>, f : a -> e bool, ?cmp : (a, a) -> e order) : e set<a>
-    s.foldl(empty) fn(z, x) if f(x) then z.insert(x) else z
+    s.tree-op(wbt/filter(_, f))
 
+// Alias of `filter`.
 pub fun filter'(s : set<a>, f : a -> e bool, ?cmp : (a, a) -> e order) : e set<a>
-    var res := set/empty
-    s.foreach fn(a) if f(a) then res := res.insert(a)
-    res
+    s.filter(f)
 
 // Take while a predicate on the elements holds. The user is responsible for
 // ensuring that for all elements j and k in the set, j < k ==> p j >= p k. See
