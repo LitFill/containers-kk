@@ -434,7 +434,7 @@ pub fun find-lt(m : map<k, v>, key : k, ?cmp : (k, k) -> e order) : e maybe<(k, 
 // ```koka
 // fun example()
 //     [(6, "a"), (7, "b")].map.find-le(6).println // prints: Just((6,"a"))
-//     [(6, "a"), (7, "b")].map.find-le(7).println // prints: Just((6,"a"))
+//     [(6, "a"), (7, "b")].map.find-le(7).println // prints: Just((7,"b"))
 // ```
 pub fun find-le(m : map<k, v>, key : k, ?cmp : (k, k) -> e order) : e maybe<(k, v)>
     m.set.find-le(key)
@@ -453,7 +453,7 @@ pub fun find-gt(m : map<k, v>, key : k, ?cmp : (k, k) -> e order) : e maybe<(k, 
 //
 // ```koka
 // fun example()
-//     [(6, "a"), (7, "b")].map.find-ge(6).println // prints: Just((7,"b"))
+//     [(6, "a"), (7, "b")].map.find-ge(6).println // prints: Just((6,"a"))
 //     [(6, "a"), (7, "b")].map.find-ge(7).println // prints: Just((7,"b"))
 // ```
 pub fun find-ge(m : map<k, v>, key : k, ?cmp : (k, k) -> e order) : e maybe<(k, v)>

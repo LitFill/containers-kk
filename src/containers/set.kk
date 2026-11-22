@@ -181,7 +181,7 @@ pub fun find-lt(s : set<a>, x : b, ?cmp : (a, b) -> e order) : e maybe<a>
 // ```koka
 // fun example()
 //   [6, 7].set.find-le(6).println // prints: Just(6)
-//   [6, 7].set.find-le(7).println // prints: Just(6)
+//   [6, 7].set.find-le(7).println // prints: Just(7)
 // ```
 pub fun find-le(s : set<a>, x : b, ?cmp : (a, b) -> e order) : e maybe<a>
     s.tree.find-le(x)
@@ -200,7 +200,7 @@ pub fun find-gt(s : set<a>, x : b, ?cmp : (a, b) -> e order) : e maybe<a>
 //
 // ```koka
 // fun example()
-//   [6, 7].set.find-ge(6).println // prints: Just(7)
+//   [6, 7].set.find-ge(6).println // prints: Just(6)
 //   [6, 7].set.find-ge(7).println // prints: Just(7)
 // ```
 pub fun find-ge(s : set<a>, x : b, ?cmp : (a, b) -> e order) : e maybe<a>
