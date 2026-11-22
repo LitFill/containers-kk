@@ -327,9 +327,10 @@ pub fun symmetric-difference(s1 : set<a>, s2 : set<a>, ?cmp : (a, a) -> e order)
     s1.foldl(empty, fn(z, x) if s2.has(x) then z else z.insert(x)) ++
     s2.foldl(empty, fn(z, x) if s1.has(x) then z else z.insert(x))
 
-// Invoke `f` for each element of a set
+// Invoke `f` for each element of a set, in ascending order. Walks the tree
+// directly, so no intermediate list is built.
 pub fun foreach(s : set<a>, f : a -> e ()) : e ()
-    s.list.foreach(f)
+    s.tree.foldl((), fn(_, x) f(x))
 
 // Calculate the Cartesian product of two sets.
 //

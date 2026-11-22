@@ -41,6 +41,11 @@ fun main()
   val sub = s_small.is-subset-of(s1)
   println("is-subset-of: " ++ sub.show)
 
+  println("\n=== Foreach benchmark ===")
+  var visited := 0
+  s1.foreach fn(x) visited := visited + 1
+  println("foreach count: " ++ visited.show)
+
   println("\n=== Index benchmark ===")
   val at = s1[large/2]
   println("s1[large/2]: " ++ at.show)
