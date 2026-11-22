@@ -72,11 +72,12 @@ never collide because `tree<a>` differs from `list<a>`.
 
 ### Now
 
-- [ ] Rename `set/function/map` → `map/from-set` (or similar); update the
-      `map.kk` doc example that uses `[6, 7].set.map("a".repeat(_))`. This is a
-      breaking rename, so do it before 0.3.0 and note it in the commit.
-- [ ] Decide on `list/map`: rename to `map/of-list` or keep and document the
-      qualified call. The current name is unusable as written.
+- [x] Rename `set/function/map` → `map/from-set`; updated the `map.kk` doc
+      example to `map/from-set([6, 7].set, "a".repeat(_))`. Breaking rename,
+      noted here for the 0.3.0 commit.
+- [x] Rename `list/map` → `of-list/map` so a bare `xs.map` is no longer
+      shadowed by std `list/map`. Updated the doc example to call
+      `of-list/map` by name.
 
 ### Next
 
