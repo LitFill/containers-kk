@@ -41,6 +41,12 @@ fun list-op(s : set<a>, f : list<a> -> e list<b>, ?cmp : (b, b) -> e order) : e 
 pub fun show(s : set<a>, ?a/show : a -> string) : string
     "set(" ++ s.list.show() ++ ")"
 
+pub fun pretty(s : set<a>, ?a/pretty : a -> string) : string
+    "{" ++ s.list.map(_.pretty).join(",") ++ "}"
+
+pub fun pretty'(s : set<a>, ?a/show : a -> string) : string
+    "{" ++ s.list.map(_.show).join(",") ++ "}"
+
 // Set equality. Requires `?(==)` on `a`.
 //
 // The sets are compared as sorted lists, not as trees: two sets holding the
