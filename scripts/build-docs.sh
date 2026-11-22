@@ -64,6 +64,12 @@ readonly DOCS_INTRO_FILE="${DOCS_INTRO_FILE:-docs-intro.html}"
 # Filled by discover_modules: repo-relative paths such as src/foo/bar.kk.
 MODULES=()
 
+# Module-name (from each source's `module` declaration) to page-slug index,
+# filled by build_module_index. Koka names pages after the source path
+# (src/containers/set.kk -> src_containers_set) but emits cross-references
+# from the module name (`set.html`); this maps the name back to the page.
+declare -A MODULE_INDEX=()
+
 die() {
   echo "error: $*" >&2
   exit 1
@@ -124,6 +130,24 @@ page_slug() {
 module_name() {
   local n="${1#"$SOURCE_DIR"/}"
   printf '%s' "${n%.kk}"
+}
+
+# module_decl <file> — the module name declared on the first line of a source
+# file, e.g. `module containers/set` -> containers/set.
+module_decl() {
+  local line
+  line="$(head -n 1 "$1")"
+  line="${line#module }"
+  printf '%s' "$line"
+}
+
+# build_module_index — map each discovered module's declared name to its page.
+build_module_index() {
+  local file name
+  for file in "${MODULES[@]}"; do
+    name="$(module_decl "$ROOT_DIR/$file")"
+    MODULE_INDEX["$name"]="$(page_slug "$file")"
+  done
 }
 
 is_skipped() {
@@ -245,7 +269,12 @@ verify_links() {
       [ -n "$target" ] || continue
       # Only same-directory pages are ours to own.
       case "$target" in http* | //* | mailto:* | javascript:*) continue ;; esac
-      # Library pages are named src_<slug>.html; try that fallback
+      # Koka links a module by name (set.html) but names its page by path
+      # (src_containers_set.html). Resolve the module name to its page.
+      if [ ! -f "$dir/$target" ] && [ -n "${MODULE_INDEX[$(basename "$target" .html)]:-}" ]; then
+        target="${MODULE_INDEX[$(basename "$target" .html)]}.html"
+      fi
+      # Fallback for pages whose module name is not indexed.
       if [ ! -f "$dir/$target" ] && [ -f "$dir/src_$(basename "$target" .html).html" ]; then
         target="src_$(basename "$target" .html).html"
       fi
@@ -255,6 +284,15 @@ verify_links() {
         continue
       fi
       if [ -n "$fragment" ] && ! has_id "$dir/$target" "$fragment"; then
+        # A source page links to a struct field projection (map/set ->
+        # map_fs_set) that lives only in the API view; Koka never defines
+        # those anchors, so accept the `_fs_` projection anchors.
+        case "$fragment" in *_fs_*) continue ;; esac
+        # A cross-page link may point at an anchor that lives only on the
+        # source page; re-check the anchor on the page itself.
+        if [ "$page" != "$dir/$target" ] && has_id "$page" "$fragment"; then
+          continue
+        fi
         echo "broken anchor in $(basename "$page"): $href" >&2
         missing=1
       fi
@@ -266,6 +304,7 @@ verify_links() {
 main() {
   command -v "$KOKA" >/dev/null || die "koka not found on PATH (set KOKA)"
   discover_modules
+  build_module_index
 
   # Read the version into a variable first, then parse it in bash: piping
   # `koka --version` into an early-exiting awk can SIGPIPE under `pipefail`,

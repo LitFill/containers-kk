@@ -92,10 +92,8 @@ pub fun set/map(kvs : set<(k, v)>, ?cmp : (k, k) -> e order) : e map<k, v>
 
 // Build a map from a `set` of keys and a function which for each key computes
 // its value.
-// This function is named `map/from-set` (rather than `set/function/map`) so
-// that it does not collide with `set/map` when both `containers/set` and
-// `containers/map` are imported. Call it by its full name; it is not reachable
-// through `s.map(f)` dot-syntax because the name does not begin with `set`.
+// This function is named `map/from-set` so that it does not collide with
+// set's `map` when both modules are imported. Call it by its full name.
 //
 // ```koka
 // fun example()
