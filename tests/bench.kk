@@ -40,3 +40,16 @@ fun main()
   val s_small = list(1, small).set
   val sub = s_small.is-subset-of(s1)
   println("is-subset-of: " ++ sub.show)
+
+  println("\n=== Index benchmark ===")
+  val at = s1[large/2]
+  println("s1[large/2]: " ++ at.show)
+  val tk = s1.take(small)
+  val dr = s1.drop(small)
+  println("take/drop size: " ++ tk.size.show ++ "/" ++ dr.size.show)
+  var acc := 0
+  var ix := 0
+  while { ix < small }
+    acc := acc + s1[ix * 100].default(0)
+    ix := ix + 1
+  println("1000 lookups sum: " ++ acc.show)

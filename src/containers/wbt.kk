@@ -313,6 +313,43 @@ pub fun delete(x, tree, ?cmp, ?params)
             Gt -> balance-right(y, l, delete(x, r))
             Eq -> glue(l, r)
 
+// at: the element at zero-based index `i` in ascending order, or `Nothing`
+// when `i` is out of range. O(log n) -- it walks the spine using the sizes
+// stored in each node.
+pub fun at(tree: tree<a>, i: int): maybe<a>
+    match tree
+        Leaf -> Nothing
+        Node(x, l, r, s) ->
+            val ls = l.size
+            if i < 0 || s <= i then Nothing
+            elif i < ls then l.at(i)
+            elif i == ls then Just(x)
+            else r.at(i - ls - 1)
+
+// take: the `n` smallest elements, as a tree. O(log n).
+pub fun take(tree: tree<a>, n: int, ?params): tree<a>
+    match tree
+        Leaf -> Leaf
+        Node(x, l, r, s) ->
+            val ls = l.size
+            if n <= 0 then Leaf
+            elif s <= n then tree
+            elif n <= ls then take(l, n)
+            elif n == ls + 1 then link(x, l, Leaf)
+            else link(x, l, take(r, n - ls - 1))
+
+// drop: all but the `n` smallest elements, as a tree. O(log n).
+pub fun drop(tree: tree<a>, n: int, ?params): tree<a>
+    match tree
+        Leaf -> Leaf
+        Node(x, l, r, s) ->
+            val ls = l.size
+            if n <= 0 then tree
+            elif s <= n then Leaf
+            elif n <= ls then link(x, drop(l, n), r)
+            elif n == ls + 1 then r
+            else drop(r, n - ls - 1)
+
 pub fun list(tree)
     fun go(t, acc) match t
         Leaf -> acc

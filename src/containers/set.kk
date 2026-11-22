@@ -453,7 +453,7 @@ pub fun index-of(s : set<a>, p : a -> e bool) : e int
 
 // Get (zero-based) element `i`  of a set. Return a `:maybe` type.
 pub fun @index(s : set<a>, i : int) : maybe<a>
-    s.list.@index(i)
+    wbt/at(s.tree, i)
 
 // Get (zero-based) element `ix`  of a set. Return a `:maybe` type.
 // See also `@index` for C-like indexing `s[ix]`.
@@ -468,11 +468,11 @@ pub fun delete-at(s : set<a>, i : int, ?cmp : (a, a) -> e order) : e maybe<set<a
 
 // Take a given number of elements in order, beginning with the smallest ones.
 pub fun take(s : set<a>, n : int = 0, ?cmp : (a, a) -> e order) : e set<a>
-    s.list-op(_.take(n))
+    wbt/take(s.tree, n).Set
 
 // Drop a given number of elements in order, beginning with the smallest ones.
 pub fun drop(s : set<a>, n : int = 0, ?cmp : (a, a) -> e order) : e set<a>
-    s.list-op(_.drop(n))
+    wbt/drop(s.tree, n).Set
 
 // Split a set at a particular index.
 pub fun split-at(s : set<a>, n : int, ?cmp : (a, a) -> e order) : e (set<a>, set<a>)

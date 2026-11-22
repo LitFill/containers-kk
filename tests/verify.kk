@@ -93,6 +93,30 @@ fun check-all-joins(p : params) : bool
   val sizes = [0, 1, 2, 3, 5, 8, 13, 100, 1000]
   sizes.all fn(a) sizes.all fn(b) check-join(a, b, p)
 
+// Rank checks: `at`/`take`/`drop`/`split-at` must agree with the list view,
+// including the out-of-range cases.
+fun check-index(seed : int) : e bool
+  val xs = build-list(seed, 25)
+  val s = xs.set
+  val n = xs.length
+  val at-ok = list(0, n - 1).all fn(i) s[i] == xs[i]
+  val oob = s[-1] == Nothing && s[n] == Nothing
+  val take-ok = list(0, n).all fn(k) s.take(k).list == xs.take(k)
+  val drop-ok = list(0, n).all fn(k) s.drop(k).list == xs.drop(k)
+  val split-ok = list(0, n).all fn(k)
+    val (a, b) = s.split-at(k)
+    a.list == xs.take(k) && b.list == xs.drop(k)
+  at-ok && oob && take-ok && drop-ok && split-ok
+
+fun run-index(seed : int, r : int, rounds : int) : e maybe<int>
+  if r >= rounds then
+    Nothing
+  else
+    if not(check-index(seed)) then
+      Just(seed)
+    else
+      run-index(seed + 1, pretend-decreasing(r + 1), rounds)
+
 fun main()
   val result = run(1, 0, 50)
   match result
@@ -110,3 +134,10 @@ fun main()
     println("FAILED: link/merge under hirayama/params'")
     (1 / 0).println
   println("all link/merge join checks passed")
+
+  match run-index(1, 0, 50)
+    Nothing -> ()
+    Just(s) ->
+      println("FAILED rank check at seed " ++ s.show)
+      (1 / 0).println
+  println("all rank-based indexing checks passed")
