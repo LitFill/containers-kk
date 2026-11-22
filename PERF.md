@@ -1,6 +1,6 @@
 # containers-kk — Performance Improvements
 
-Snapshot: 2026-11-23 · version 0.3.0
+Snapshot: 2026-11-23 · version 0.4.0
 
 ## Delivered (correct, measured)
 
