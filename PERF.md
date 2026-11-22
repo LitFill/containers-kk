@@ -1,6 +1,6 @@
 # containers-kk — Performance Improvements
 
-Snapshot: 2026-11-23 · on top of v0.4.0 (unreleased)
+Snapshot: 2026-11-23 · version 0.5.0
 
 ## Since v0.4.0
 
