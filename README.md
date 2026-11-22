@@ -6,7 +6,7 @@ Koka weight-balanced tree containers library.
 
 From another Koka project:
 
-    koki add path:wbt-kk
+    koki add path:containers-kk
 
 or by hand, in that project's `flake.nix`:
 
@@ -14,15 +14,15 @@ or by hand, in that project's `flake.nix`:
 
 ```nix
 kokaLibsFor = pkgs: [
-  self.inputs.containers-kk.kokaLibraries.${pkgs.stdenv.hostPlatform.system}.containers-kk.includePath
+  self.inputs.containers-kk.kokaLibraries.${pkgs.stdenv.hostPlatform.system}.wbt.includePath
 ];
 ```
 
 ## Layout
 
-- `src/wbt.kk` — Weight balanced trees
-- `src/set.kk` — Sets defined in term of WBTs
-- `src/map.kk` — Maps defined in term of WBTs
+- `src/containers/wbt.kk` — Weight balanced trees
+- `src/containers/set.kk` — Sets defined in term of WBTs
+- `src/containers/map.kk` — Maps defined in term of WBTs
 - `example.kk` — a tiny program that imports it
 - `flake.nix` — the build, and the `kokaLibraries` output other flakes use
 

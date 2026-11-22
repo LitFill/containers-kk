@@ -62,19 +62,7 @@
         pkgs: system: {
           default = pkgs.stdenv.mkDerivation {
             inherit pname version;
-            src = pkgs.lib.cleanSourceWith {
-              src = self;
-              filter =
-                path: type:
-                let
-                  base = baseNameOf (toString path);
-                in
-                !(builtins.elem base [
-                  "result"
-                  "koka.json"
-                  ".koka"
-                ]);
-            };
+            src = srcFor pkgs;
             nativeBuildInputs = [
               pkgs.koka
               pkgs.stdenv.cc

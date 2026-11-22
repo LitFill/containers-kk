@@ -5,12 +5,12 @@ module example
 //     nix develop
 //     koka -o example example.kk && ./example
 
-import src/set
+import containers/set
 
 fun testing-set()
   var s : set<int> := empty
   [1, 66, 3,5, 6, 7, 5, 4, 3, 3, 3, 4, 5, 6, 7, 8, 8, 8, 7, 6, 4, 32, 2, 2].foreach fn(x)
-    s := x.insert(s)
+    s := insert'(x, s)
   s
 
 fun main()
