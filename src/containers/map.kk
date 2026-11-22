@@ -25,14 +25,17 @@ pub fun l/cmp(
 
 // Build a map from a list of key/value pairs. If the list contains more than
 // one value for the same key, the last value for the key is retained.
+// This function is named `of-list/map` rather than `list/map` so that a bare
+// `xs.map` call is not shadowed by the standard library's `list/map`; call it
+// by its full name.
 //
 // ```koka
 // fun example()
 //   ([].map : map<int, string>).println        // prints: map([])
-//   [(6, "a"), (7, "b"), (6, "c")].map.println // prints: map([(6,"c"),(7,"b")])
-//   [(6, "c"), (7, "b"), (6, "a")].map.println // prints: map([(6,"a"),(7,"b")])
+//   [(6, "a"), (7, "b"), (6, "c")].of-list/map.println // prints: map([(6,"c"),(7,"b")])
+//   [(6, "c"), (7, "b"), (6, "a")].of-list/map.println // prints: map([(6,"a"),(7,"b")])
 // ```
-pub fun list/map(kvs : list<(k, v)>, ?cmp : (k, k) -> e order) : e map<k, v>
+pub fun of-list/map(kvs : list<(k, v)>, ?cmp : (k, k) -> e order) : e map<k, v>
     kvs.set.Map
 
 // Build a map from a list of key/value pairs with a combining function.
@@ -87,15 +90,19 @@ pub fun list/map-upsert(
 pub fun set/map(kvs : set<(k, v)>, ?cmp : (k, k) -> e order) : e map<k, v>
     kvs.Map
 
-// Build a map from a Set of keys and a function which for each key computes
+// Build a map from a `set` of keys and a function which for each key computes
 // its value.
+// This function is named `map/from-set` (rather than `set/function/map`) so
+// that it does not collide with `set/map` when both `containers/set` and
+// `containers/map` are imported. Call it by its full name; it is not reachable
+// through `s.map(f)` dot-syntax because the name does not begin with `set`.
 //
 // ```koka
 // fun example()
-//     [6, 7].set.map("a".repeat(_)).println
+//     map/from-set([6, 7].set, "a".repeat(_)).println
 //     // ^ prints: map([(6,"aaaaaa"),(7,"aaaaaaa")])
 // ```
-pub fun set/function/map(
+pub fun map/from-set(
     s : set<k>, f : k -> e v,
     ?k/cmp : (k, k) -> e order
 ) : e map<k, v>
