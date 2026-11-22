@@ -223,10 +223,10 @@ pub fun size(s : set<a>) : int
 // The union of two sets, preferring the first set when equal elements are
 // encountered.
 pub fun union(s1 : set<a>, s2 : set<a>, ?cmp : (a, a) -> e order) : e set<a>
-    tree-op(s1, s2, union(_, _))
+    tree-op(s1, s2, wbt/union(_, _))
 
 pub fun union-with(s1 : set<a>, s2 : set<a>, f : (left : a, right : a) -> e a, ?cmp : (a, a) -> e order) : e set<a>
-    tree-op(s1, s2, union-with(_, _, f))
+    tree-op(s1, s2, wbt/union-with(_, _, f))
 
 // Set append operator using `union`.
 pub fun (++)(s1 : set<a>, s2 : set<a>, ?cmp : (a, a) -> e order) : e set<a>
@@ -274,7 +274,7 @@ pub fun flatten(ss : set<set<a>>, ?cmp : (a, a) -> e order) : e set<a>
 //   // ^ prints: set([7])
 // ```
 pub fun difference(s1 : set<a>, s2 : set<a>, ?cmp : (a, a) -> e order) : e set<a>
-    s2.foldl(s1, _.delete(_))
+    tree-op(s1, s2, wbt/difference(_, _))
 
 // The operator for the difference of two sets.
 pub fun (\\)(s1 : set<a>, s2 : set<a>, ?cmp : (a, a) -> e order) : e set<a>
@@ -297,7 +297,7 @@ pub fun (-)(s1 : set<a>, s2 : set<a>, ?cmp : (a, a) -> e order) : e set<a>
 //   intersection([B].set, [A].set).show.println // prints: set([B])
 // ```
 pub fun intersection(s1 : set<a>, s2 : set<a>, ?cmp : (a, a) -> e order) : e set<a>
-    s1.foldl(empty) fn(z, x) if s2.has(x) then z.insert(x) else z
+    tree-op(s1, s2, wbt/intersection(_, _))
 
 // The intersection of a series of sets. Intersections are performed left-to-right.
 pub fun intersections(ss : list<set<a>>, ?cmp : (a, a) -> e order) : e set<a>
