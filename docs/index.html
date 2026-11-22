@@ -4,15 +4,15 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>containers — Koka library</title>
-<meta name="description" content="API reference for containers, a Koka library." />
+<title>containers-kk — Koka library</title>
+<meta name="description" content="API reference for containers-kk, a Koka library." />
 <meta name="theme-color" content="#0b62c4" />
 <link rel="stylesheet" href="styles/koka.css" />
 </head>
 <body class="koka doc">
 <main>
-<h1>containers</h1>
-<p>API reference for containers, a Koka library.</p>
+<h1>containers-kk</h1>
+<p>API reference for containers-kk, a Koka library.</p>
 
 <p>Go to the <a href="toc.html">table of contents</a>.</p>
 
@@ -20,9 +20,10 @@
 
 <h2 id="modules">Modules</h2>
 <ul>
-<li><a href="src_map.html"><code>map</code></a> — <a href="src_map-source.html">source</a></li>
-<li><a href="src_set.html"><code>set</code></a> — <a href="src_set-source.html">source</a></li>
-<li><a href="src_wbt.html"><code>wbt</code></a> — <a href="src_wbt-source.html">source</a></li>
+<li><a href="src_containers.html"><code>containers</code></a> — <a href="src_containers-source.html">source</a></li>
+<li><a href="src_containers_map.html"><code>containers/map</code></a> — <a href="src_containers_map-source.html">source</a></li>
+<li><a href="src_containers_set.html"><code>containers/set</code></a> — <a href="src_containers_set-source.html">source</a></li>
+<li><a href="src_containers_wbt.html"><code>containers/wbt</code></a> — <a href="src_containers_wbt-source.html">source</a></li>
 </ul>
 
 <h2 id="install">Installation</h2>
@@ -32,7 +33,7 @@ paths under <code>kokaLibraries</code> for downstream flakes:</p>
 
 <pre class="koka source">nix build .#packages.x86_64-linux.default
 
-includePath="$(nix eval --raw .#kokaLibraries.x86_64-linux.containers.includePath)"</pre>
+includePath="$(nix eval --raw .#kokaLibraries.x86_64-linux.containers-kk.includePath)"</pre>
 <p>In a consuming flake, <code>nix develop</code> opens a shell that writes
 <code>koka.json</code> with the include directories of its dependencies, so
 <code>import</code> of this library resolves in editors and the language server.</p>
