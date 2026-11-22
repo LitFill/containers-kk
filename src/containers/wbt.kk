@@ -293,8 +293,8 @@ pub fun find-le(tree : tree<a>, x : b, ?cmp : (a, b) -> e order) : e maybe<a>
         Leaf -> Nothing
         Node(a, l, r) ->
             if a <= x
-            then find-lt(r, x) || Just(a)
-            else find-lt(l, x)
+            then find-le(r, x) || Just(a)
+            else find-le(l, x)
 
 pub fun find-gt(tree : tree<a>, x : b, ?cmp : (a, b) -> e order) : e maybe<a>
     match tree
@@ -309,8 +309,8 @@ pub fun find-ge(tree : tree<a>, x : b, ?cmp : (a, b) -> e order) : e maybe<a>
         Leaf -> Nothing
         Node(a, l, r) ->
             if a >= x
-            then find-gt(l, x) || Just(a)
-            else find-gt(r, x)
+            then find-ge(l, x) || Just(a)
+            else find-ge(r, x)
 
 pub fun is-empty(t : tree<a>) : bool
     t.is-leaf
