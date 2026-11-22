@@ -1,75 +1,68 @@
-# containers-kk — Performance Improvement Plan
+# containers-kk — Performance Improvements
 
 Snapshot: 2026-11-23 · version 0.3.0
 
-## Current bottlenecks
+## Delivered (correct, measured)
 
-### 1. Union/intersection/difference use list folds → O(n log m)
+Benchmark `tests/bench.kk` (union/intersection/difference/max/min/fold over a
+100k-element set):
 
-- `union(t1, t2)`: `t1.list.foldl(t2, insert')` — O(|t1| log |t2|)
-- `intersection(s1, s2)`: `s1.foldl(empty) fn(z,x) if s2.has(x) then z.insert(x) else z` — O(|s1| log |s2|)
-- `difference(s1, s2)`: `s2.foldl(s1, _.delete(_))` — O(|s2| log |s1|)
+| Version | Time |
+| --- | --- |
+| Original (list-fold set algebra, `list.last/head` max/min) | 2.57s |
+| This change (tree-direct foldl, O(log n) max/min, direct subset) | 2.43s |
 
-For large sets (100k+ elements), this is the dominant cost.
+~6% wall-clock improvement, plus asymptotically better max/min and subset.
 
-### 2. maximum/minimum traverse whole tree → O(n)
+### What changed
 
-- `tree.list.last` / `tree.list.head` — O(n) time, O(n) allocation
-- Should be O(log n) via direct tree traversal
+1. **Tree-direct `foldl`/`foldr`** (`wbt.kk`): fold the tree directly instead
+   of `s.list.foldl(...)`. Avoids materialising the whole list (O(n) allocation
+   → O(log n)). `set.kk` `foldl`/`foldr` now call these; `map.kk` inherits it.
+2. **O(log n) `maximum`/`minimum`** (`wbt.kk`): were `tree.list.last` /
+   `tree.list.head` (O(n)); now walk down the right/left spine.
+3. **`is-subset-of`** (`set.kk`): direct `all (∈ s2)` check instead of
+   `union(s1,s2) == s2`, so no union is built (O(m log n), one tree traversal).
+4. **`split-max`** (`wbt.kk`): mirror of the existing `split-min`.
+5. **Benchmark** (`tests/bench.kk`) and **correctness test**
+   (`tests/verify.kk`): property-checks union/intersection/difference against a
+   sorted-list reference over 50 random cases (also checks `is-valid`).
 
-### 3. foldl/foldr convert to list first → O(n) allocation
+## Join-based set algebra — attempted, blocked
 
-- `s.list.foldl(z, f)` — allocates full list, then folds
-- Direct tree fold would be O(n) time, O(log n) space
+A join-based `union`/`intersection`/`difference` would be O(m log(n/m+1)) vs
+the current O(n log m). It was implemented and benchmarked at **1.8s** — but
+that version produced **structurally invalid trees** (correct elements, wrong
+shape), so it was rejected.
 
-### 4. is-subset-of does unnecessary union → O(n log m)
+### Root cause (pre-existing library limitation)
 
-- `union(s1, s2) == s2` — builds full union then compares
-- Direct subset check would be O(m log n) or better
+`combine` joins two trees (all of t1 < all of t2) with a **single rotation**
+(`balance-left` / `balance-right`). That is enough for `insert`/`delete`, whose
+imbalance is always one level, but NOT for `combine` of trees whose sizes
+differ arbitrarily:
 
-## Implementation status
+```
+combine(mk(1), mk(13))  -> not is-valid
+balance-left(x, 1-node, split-min-shape-12-node) -> not is-valid
+balance-left(x, 1-node, mk(12))                  -> is-valid      (same sizes, different shape)
+```
 
-### Phase 1: split-max ✓
-- Added `split-max(tree)` to `wbt.kk`
+A correct `balance-left` must produce a valid tree for **any** valid input; this
+one depends on the input shape. So `combine` is only safe when the two trees are
+within the balance ratio, which join-based set algebra does not guarantee.
 
-### Phase 2: maximum/minimum ✓
-- Fixed `maximum`/`minimum` to be O(log n) instead of O(n)
-- Now traverses tree directly instead of converting to list
+### What a fix requires
 
-### Phase 3: tree-direct foldl/foldr ✓
-- Added `tree-foldl` and `tree-foldr` to `wbt.kk`
-- Updated `set.kk` to use tree-direct folds
-- `map.kk` automatically benefits (uses `set.foldl`/`set.foldr`)
+Make `balance-left`/`balance-right` (or `combine`) a full rebalance that
+restores the weight invariant for arbitrary size ratios — i.e. reimplement the
+WBT balance/join, not a single rotation. That is a change to the library's core
+balancing (used by every operation) and must be done carefully with its own
+correctness proof and tests. Until then the fold-based set algebra above is the
+correct choice.
 
-### Phase 4: Join-based set algebra (partial)
-- Attempted join-based union/intersection/difference
-- Hit effect issues with recursive implementations
-- Simplified to fold-based versions using tree-direct foldl
-- **Result**: ~6% improvement (2.43s vs 2.57s)
-- **Future work**: Resolve effect issues to get O(m log(n/m + 1)) complexity
-
-### Phase 5: is-subset-of ✓
-- Direct subset check without building union
-- O(m log n) instead of O(n log m)
-
-### Phase 6: Benchmark ✓
-- Added `tests/bench.kk` with union/intersection/difference/max/min/fold benchmarks
-
-## Remaining work
-
-### Join-based set algebra (high impact)
-The current fold-based union/intersection/difference are O(n log m).
-Join-based versions would be O(m log(n/m + 1)).
-
-**Blockers**: Effect type issues with recursive implementations.
-
-**Approach**: 
-1. Implement join-based union in wbt.kk
-2. Resolve effect issues (may need explicit effect annotations)
-3. Implement join-based intersection and difference
-4. Benchmark and verify correctness
-
-### Additional optimizations
-- `union-with` still uses list fold
-- `flatten` and `unions` could use join-based merge
-- Memory allocation reduction in hot paths
+### Other future work
+- `union-with` still uses a list fold.
+- `flatten` / `unions` could stream instead of fold.
+- Reduce allocation in `insert`/`delete` hot paths.
+- `wbt/eq` (structural) is now unused by `set` — document or drop.

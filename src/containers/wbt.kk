@@ -221,47 +221,29 @@ pub fun combine(t1: tree<a>, t2: tree<a>, ?params): tree<a>
     then val (x, l) = del-max(t1)   in balance-left(x,  l,  t2)
     else val (x, r) = split-min(t2) in balance-right(x, t1, r)
 
-// Split a tree into elements less than and greater than a pivot.
-// The pivot itself is excluded from both results.
-fun split(tree : tree<a>, pivot : a, ?cmp : (a, a) -> e order) : e (tree<a>, tree<a>)
-    match tree
-        Leaf -> (Leaf, Leaf)
-        Node(x, l, r) ->
-            val c = cmp(x, pivot)
-            if c == Lt
-            then
-                val (l1, r1) = split(r, pivot)
-                (insert(x, l1), r1)
-            elif c == Gt
-            then
-                val (l1, r1) = split(l, pivot)
-                (l1, insert(x, r1))
-            else
-                (l, r)
-
+// NOTE: A join-based (Hirata/Adams) union would be O(m log(n/m+1)), but this
+// library's `balance-left`/`balance-right` do a single rotation and so only
+// produce a valid tree when the two sides are within the balance ratio. That
+// is enough for insert/delete (bounded imbalance) but not for `combine` of
+// trees whose sizes differ arbitrarily, so `combine` is only safe on trees of
+// similar size. A correct join-based union would need a full rebalance in
+// `combine`. Until then we use the simpler, correct fold-based version below.
 pub fun union(t1 : tree<a>, t2 : tree<a>, ?cmp : (a, a) -> e order, ?params : params) : e tree<a>
     if t1.is-leaf then t2
     elif t2.is-leaf then t1
-    else
-        t1.foldl(t2) fn(acc, x) insert(x, acc)
+    else t1.foldl(t2) fn(acc, x) insert(x, acc)
 
 pub fun intersection(t1 : tree<a>, t2 : tree<a>, ?cmp : (a, a) -> e order, ?params : params) : e tree<a>
     if t1.is-leaf then Leaf
     elif t2.is-leaf then Leaf
     elif t1.size > t2.size
-    then
-        t1.foldl(Leaf) fn(acc, x)
-            if x.member(t2) then insert(x, acc) else acc
-    else
-        t2.foldl(Leaf) fn(acc, x)
-            if x.member(t1) then insert(x, acc) else acc
+    then t1.foldl(Leaf) fn(acc, x) if x.member(t2) then insert(x, acc) else acc
+    else t2.foldl(Leaf) fn(acc, x) if x.member(t1) then insert(x, acc) else acc
 
 pub fun difference(t1 : tree<a>, t2 : tree<a>, ?cmp : (a, a) -> e order, ?params : params) : e tree<a>
     if t1.is-leaf then Leaf
     elif t2.is-leaf then t1
-    else
-        t1.foldl(t1) fn(acc, x)
-            if x.member(t2) then delete(x, acc) else acc
+    else t1.foldl(t1) fn(acc, x) if x.member(t2) then delete(x, acc) else acc
 
 pub fun union-with(
     t1 : tree<a>, t2 : tree<a>,
