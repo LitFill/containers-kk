@@ -10,58 +10,51 @@ Benchmark `tests/bench.kk` (union/intersection/difference/max/min/fold over a
 | Version | Time |
 | --- | --- |
 | Original (list-fold set algebra, `list.last/head` max/min) | 2.57s |
-| This change (tree-direct foldl, O(log n) max/min, direct subset) | 2.43s |
+| This change (join-based set algebra, O(log n) max/min, direct subset) | 1.83s |
 
-~6% wall-clock improvement, plus asymptotically better max/min and subset.
+29% wall-clock improvement, plus asymptotically better max/min and subset.
 
 ### What changed
 
-1. **Tree-direct `foldl`/`foldr`** (`wbt.kk`): fold the tree directly instead
-   of `s.list.foldl(...)`. Avoids materialising the whole list (O(n) allocation
-   → O(log n)). `set.kk` `foldl`/`foldr` now call these; `map.kk` inherits it.
-2. **O(log n) `maximum`/`minimum`** (`wbt.kk`): were `tree.list.last` /
-   `tree.list.head` (O(n)); now walk down the right/left spine.
-3. **`is-subset-of`** (`set.kk`): direct `all (∈ s2)` check instead of
-   `union(s1,s2) == s2`, so no union is built (O(m log n), one tree traversal).
-4. **`split-max`** (`wbt.kk`): mirror of the existing `split-min`.
-5. **Benchmark** (`tests/bench.kk`) and **correctness test**
-   (`tests/verify.kk`): property-checks union/intersection/difference against a
-   sorted-list reference over 50 random cases (also checks `is-valid`).
+1. **Join-based set algebra** (`wbt.kk`): `union`/`intersection`/`difference`
+   now use `split` + `link`/`merge` (the "Just Join" technique), giving
+   O(m log(n/m+1)) instead of O(n log m). The classic `combine` is preserved
+   as `glue` (used only by `delete`, where subtrees are within the balance
+   ratio); `combine` is now an alias of `merge`.
+2. **Tree-direct `foldl`/`foldr`** (`wbt.kk`): fold the tree directly instead
+   of `s.list.foldl(...)`. Avoids materialising the whole list.
+3. **O(log n) `maximum`/`minimum`** (`wbt.kk`): walk down the right/left spine
+   instead of `tree.list.last`/`tree.list.head`.
+4. **`is-subset-of`** (`set.kk`): direct `all (∈ s2)` check instead of
+   `union(s1,s2) == s2`.
+5. **`split-max`** (`wbt.kk`): mirror of `split-min`.
+6. **Tests**: `tests/bench.kk` (benchmark), `tests/verify.kk` (property test
+   of union/intersection/difference against a sorted-list reference),
+   `tests/link-test.kk` (direct link/merge test on extreme size ratios).
 
-## Join-based set algebra — attempted, blocked
+### Bugs fixed
 
-A join-based `union`/`intersection`/`difference` would be O(m log(n/m+1)) vs
-the current O(n log m). It was implemented and benchmarked at **1.8s** — but
-that version produced **structurally invalid trees** (correct elements, wrong
-shape), so it was rejected.
+- **`maximum`**: was matching `Node(x, Leaf, _)` (the *minimum* pattern),
+  returning the root for nodes with an empty left but non-empty right. Fixed
+  to `Node(x, _, Leaf)`.
+- **`insert-with`**: recursive calls used `x.insert(l)` instead of
+  `insert-with(x, l, f)`, so `f` was only applied at the root. Fixed.
 
-### Root cause (pre-existing library limitation)
+## Why link/merge instead of fixing combine
 
-`combine` joins two trees (all of t1 < all of t2) with a **single rotation**
-(`balance-left` / `balance-right`). That is enough for `insert`/`delete`, whose
-imbalance is always one level, but NOT for `combine` of trees whose sizes
-differ arbitrarily:
+`combine` is the classic *glue* operation — valid only when both trees are
+already within the balance ratio (siblings of a valid node). Making the single
+rotation "more general" is the wrong move; a single rotation is the correct
+tool when the imbalance is bounded.
 
-```
-combine(mk(1), mk(13))  -> not is-valid
-balance-left(x, 1-node, split-min-shape-12-node) -> not is-valid
-balance-left(x, 1-node, mk(12))                  -> is-valid      (same sizes, different shape)
-```
+The standard answer (Adams 1993, Hirai–Yamamoto 2011, Blelloch et al. "Just
+Join") is to keep the rotations as they are and add a descending `link`/`merge`
+that walks down the spine of the heavier tree until the sizes are comparable,
+then rebuilds on the way back up, doing at most one rebalance per level. Each
+step then has bounded imbalance, so the existing `balance-*` are sufficient.
 
-A correct `balance-left` must produce a valid tree for **any** valid input; this
-one depends on the input shape. So `combine` is only safe when the two trees are
-within the balance ratio, which join-based set algebra does not guarantee.
+## Other future work
 
-### What a fix requires
-
-Make `balance-left`/`balance-right` (or `combine`) a full rebalance that
-restores the weight invariant for arbitrary size ratios — i.e. reimplement the
-WBT balance/join, not a single rotation. That is a change to the library's core
-balancing (used by every operation) and must be done carefully with its own
-correctness proof and tests. Until then the fold-based set algebra above is the
-correct choice.
-
-### Other future work
 - `union-with` still uses a list fold.
 - `flatten` / `unions` could stream instead of fold.
 - Reduce allocation in `insert`/`delete` hot paths.

@@ -1,6 +1,7 @@
 module wbt
 
 import std/core/unsafe
+import std/core/undiv
 
 fun invariant(msg) : a
     with unsafe-total
@@ -186,8 +187,8 @@ pub fun insert-with(x: a, tree: tree<a>, f : (old : a, new : a) -> e a, ?cmp: (a
     match tree
         Leaf -> node(x)
         Node(y, l, r) -> match cmp(x, y)
-            Lt -> y.balance-right(x.insert(l), r)
-            Gt -> y.balance-left(l, x.insert(r))
+            Lt -> y.balance-right(insert-with(x, l, f), r)
+            Gt -> y.balance-left(l, insert-with(x, r, f))
             Eq -> f(y, x).node(l, r)
 
 pub fun split-min(tree, ?params)
@@ -214,36 +215,93 @@ pub fun del-max(tree, ?params)
             val (x', r') = del-max(r)
             (x', balance-right(x, l, r'))
 
-pub fun combine(t1: tree<a>, t2: tree<a>, ?params): tree<a>
+// glue: the classic combine. Valid only when t1 and t2 are already within
+// the balance ratio (siblings of a valid node). Used by delete.
+fun glue(t1: tree<a>, t2: tree<a>, ?params): tree<a>
     if   t1.is-leaf         then t2
     elif t2.is-leaf         then t1
     elif t1.size > t2.size
-    then val (x, l) = del-max(t1)   in balance-left(x,  l,  t2)
+    then val (x, l) = del-max(t1)   in balance-left(x, l, t2)
     else val (x, r) = split-min(t2) in balance-right(x, t1, r)
 
-// NOTE: A join-based (Hirata/Adams) union would be O(m log(n/m+1)), but this
-// library's `balance-left`/`balance-right` do a single rotation and so only
-// produce a valid tree when the two sides are within the balance ratio. That
-// is enough for insert/delete (bounded imbalance) but not for `combine` of
-// trees whose sizes differ arbitrarily, so `combine` is only safe on trees of
-// similar size. A correct join-based union would need a full rebalance in
-// `combine`. Until then we use the simpler, correct fold-based version below.
+fun insert-min(x: a, t: tree<a>, ?params): tree<a>
+    match t
+        Leaf          -> single(x)
+        Node(y, l, r) -> balance-right(y, insert-min(x, l), r)
+
+fun insert-max(x: a, t: tree<a>, ?params): tree<a>
+    match t
+        Leaf          -> single(x)
+        Node(y, l, r) -> balance-left(y, l, insert-max(x, r))
+
+// link: all of l < x < all of r, ANY sizes. Walk down the spine of the
+// heavier tree until sizes are comparable, then rebuild.
+pub fun link(x: a, l: tree<a>, r: tree<a>, ?params): tree<a>
+    match (l, r)
+        (Leaf, _) -> insert-min(x, r)
+        (_, Leaf) -> insert-max(x, l)
+        (Node(y, ly, ry, _), Node(z, lz, rz, _)) ->
+            if not(balanced1(l, r))
+            then balance-right(z, link(x, l, pretend-decreasing(lz)), rz)
+            elif not(balanced1(r, l))
+            then balance-left(y, ly, link(x, pretend-decreasing(ry), r))
+            else node(x, l, r)
+
+// merge: all of l < all of r, ANY sizes.
+pub fun merge(l: tree<a>, r: tree<a>, ?params): tree<a>
+    match (l, r)
+        (Leaf, _) -> r
+        (_, Leaf) -> l
+        (Node(y, ly, ry, _), Node(z, lz, rz, _)) ->
+            if not(balanced1(l, r))
+            then balance-right(z, merge(l, pretend-decreasing(lz)), rz)
+            elif not(balanced1(r, l))
+            then balance-left(y, ly, merge(pretend-decreasing(ry), r))
+            else glue(l, r)
+
+// combine: alias of merge, so external callers get the correct behaviour.
+pub fun combine(t1: tree<a>, t2: tree<a>, ?params): tree<a>
+    merge(t1, t2)
+
+// split: split t at x into (<x, found?, >x).
+pub fun split(t: tree<a>, x: a, ?cmp: (a, a) -> e order, ?params): e (tree<a>, bool, tree<a>)
+    match t
+        Leaf -> (Leaf, False, Leaf)
+        Node(y, l, r) -> match cmp(x, y)
+            Lt ->
+                val (ll, f, lr) = split(l, x)
+                (ll, f, link(y, lr, r))
+            Gt ->
+                val (rl, f, rr) = split(r, x)
+                (link(y, l, rl), f, rr)
+            Eq -> (l, True, r)
+
+// union: t1 wins on conflicts.
 pub fun union(t1 : tree<a>, t2 : tree<a>, ?cmp : (a, a) -> e order, ?params : params) : e tree<a>
-    if t1.is-leaf then t2
-    elif t2.is-leaf then t1
-    else t1.foldl(t2) fn(acc, x) insert(x, acc)
+    match (t1, t2)
+        (Leaf, _) -> t2
+        (_, Leaf) -> t1
+        (Node(x, l1, r1, _), _) ->
+            val (l2, _, r2) = split(t2, x)
+            link(x, union(pretend-decreasing(l1), l2), union(pretend-decreasing(r1), r2))
 
 pub fun intersection(t1 : tree<a>, t2 : tree<a>, ?cmp : (a, a) -> e order, ?params : params) : e tree<a>
-    if t1.is-leaf then Leaf
-    elif t2.is-leaf then Leaf
-    elif t1.size > t2.size
-    then t1.foldl(Leaf) fn(acc, x) if x.member(t2) then insert(x, acc) else acc
-    else t2.foldl(Leaf) fn(acc, x) if x.member(t1) then insert(x, acc) else acc
+    match (t1, t2)
+        (Leaf, _) -> Leaf
+        (_, Leaf) -> Leaf
+        (Node(x, l1, r1, _), _) ->
+            val (l2, found, r2) = split(t2, x)
+            val l = intersection(pretend-decreasing(l1), l2)
+            val r = intersection(pretend-decreasing(r1), r2)
+            if found then link(x, l, r) else merge(l, r)
 
 pub fun difference(t1 : tree<a>, t2 : tree<a>, ?cmp : (a, a) -> e order, ?params : params) : e tree<a>
-    if t1.is-leaf then Leaf
-    elif t2.is-leaf then t1
-    else t1.foldl(t1) fn(acc, x) if x.member(t2) then delete(x, acc) else acc
+    match (t1, t2)
+        (Leaf, _) -> Leaf
+        (_, Leaf) -> t1
+        (_, Node(y, l2, r2, _)) ->
+            val (l1, _, r1) = split(t1, y)
+            merge(difference(pretend-decreasing(l1), l2), difference(pretend-decreasing(r1), r2))
 
 pub fun union-with(
     t1 : tree<a>, t2 : tree<a>,
@@ -258,7 +316,7 @@ pub fun delete(x, tree, ?cmp, ?params)
         Node(y, l, r) -> match cmp(x, y)
             Lt -> balance-left(y, delete(x, l), r)
             Gt -> balance-right(y, l, delete(x, r))
-            Eq -> combine(l, r)
+            Eq -> glue(l, r)
 
 pub fun list(tree)
     fun go(t, acc) match t
@@ -322,7 +380,7 @@ pub fun map-monotonic(tree, f)
 pub fun maximum(tree : tree<a>) : maybe<a>
     match tree
         Leaf -> Nothing
-        Node(x, Leaf, _) -> Just(x)
+        Node(x, _, Leaf) -> Just(x)
         Node(_, _, r) -> r.maximum
 
 pub fun minimum(tree : tree<a>) : maybe<a>
