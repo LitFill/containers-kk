@@ -31,3 +31,4 @@ kokaLibsFor = pkgs: [
     koki build      # nix build
     koki check      # nix flake check
     koki dev        # nix develop
+    nix build .#tests  # build and run the property tests
