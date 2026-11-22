@@ -42,8 +42,12 @@ pub fun show(s : set<a>, ?a/show : a -> string) : string
     "set(" ++ s.list.show() ++ ")"
 
 // Set equality. Requires `?(==)` on `a`.
+//
+// The sets are compared as sorted lists, not as trees: two sets holding the
+// same elements have equal contents even when the insertion order gave them
+// different shapes.
 pub fun eq(s1 : set<a>, s2 : set<a>, ?a/(==) : (a, a) -> e bool) : e bool
-    s1.tree == s2.tree
+    s1.list == s2.list
 
 // Set equality operator. Requires `?(==)` on `a`.
 pub fun (==)(x : set<a>, y : set<a>, ?a/(==) : (a, a) -> e bool) : e bool
