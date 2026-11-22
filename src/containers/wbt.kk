@@ -207,21 +207,13 @@ pub fun split-max(tree, ?params)
             val (x', r') = split-max(r)
             (x', balance-right(x, l, r'))
 
-pub fun del-max(tree, ?params)
-    match tree
-        Leaf -> invariant("del-max: found a Leaf")
-        Node(x, l, Leaf) -> (x, l)
-        Node(x, l, r) ->
-            val (x', r') = del-max(r)
-            (x', balance-right(x, l, r'))
-
 // glue: the classic combine. Valid only when t1 and t2 are already within
 // the balance ratio (siblings of a valid node). Used by delete.
 fun glue(t1: tree<a>, t2: tree<a>, ?params): tree<a>
     if   t1.is-leaf         then t2
     elif t2.is-leaf         then t1
     elif t1.size > t2.size
-    then val (x, l) = del-max(t1)   in balance-left(x, l, t2)
+    then val (x, l) = split-max(t1) in balance-left(x, l, t2)
     else val (x, r) = split-min(t2) in balance-right(x, t1, r)
 
 fun insert-min(x: a, t: tree<a>, ?params): tree<a>
@@ -285,6 +277,8 @@ pub fun union(t1 : tree<a>, t2 : tree<a>, ?cmp : (a, a) -> e order, ?params : pa
             val (l2, _, r2) = split(t2, x)
             link(x, union(pretend-decreasing(l1), l2), union(pretend-decreasing(r1), r2))
 
+// intersection: on `Eq` the element from `t1` is kept, so the result draws its
+// values from the left-hand tree (mirrors `set/intersection`).
 pub fun intersection(t1 : tree<a>, t2 : tree<a>, ?cmp : (a, a) -> e order, ?params : params) : e tree<a>
     match (t1, t2)
         (Leaf, _) -> Leaf
@@ -295,6 +289,7 @@ pub fun intersection(t1 : tree<a>, t2 : tree<a>, ?cmp : (a, a) -> e order, ?para
             val r = intersection(pretend-decreasing(r1), r2)
             if found then link(x, l, r) else merge(l, r)
 
+// difference: the elements of `t1` that are not in `t2`.
 pub fun difference(t1 : tree<a>, t2 : tree<a>, ?cmp : (a, a) -> e order, ?params : params) : e tree<a>
     match (t1, t2)
         (Leaf, _) -> Leaf
