@@ -1,6 +1,7 @@
 module tests/verify
 
 import containers/set
+import containers/wbt
 import std/core/undiv
 
 // Reference set operations on sorted lists.
@@ -72,6 +73,26 @@ fun run(seed : int, r : int, rounds : int) : e maybe<int>
     else
       run(seed + 1, pretend-decreasing(r + 1), rounds)
 
+// Join checks: `link`/`merge` on lopsided pairs, the cases that broke the old
+// `combine`. Both trees are built with the parameter set under test so the
+// result is checked against the same balance ratio it was produced with.
+fun mk(lo : int, n : int, p : params) : tree<int>
+  list(lo, lo + n - 1).foldl((empty : tree<int>)) fn(z, x) x.insert(z, ?params = p)
+
+fun check-join(a : int, b : int, p : params) : bool
+  val l = mk(0, a, p)
+  val r = mk(a + 1, b, p)
+  val m = merge(l, r, ?params = p)
+  val k = link(a, l, r, ?params = p)
+  m.is-valid(?params = p)
+  && m.list == list(0, a - 1) ++ list(a + 1, a + b)
+  && k.is-valid(?params = p)
+  && k.list == list(0, a + b)
+
+fun check-all-joins(p : params) : bool
+  val sizes = [0, 1, 2, 3, 5, 8, 13, 100, 1000]
+  sizes.all fn(a) sizes.all fn(b) check-join(a, b, p)
+
 fun main()
   val result = run(1, 0, 50)
   match result
@@ -79,3 +100,13 @@ fun main()
     Just(s) ->
       println("FAILED at seed " ++ s.show)
       (1 / 0).println
+
+  val afp = check-all-joins(afp/params)
+  val hirayama = check-all-joins(hirayama/params')
+  if not(afp) then
+    println("FAILED: link/merge under afp/params")
+    (1 / 0).println
+  if not(hirayama) then
+    println("FAILED: link/merge under hirayama/params'")
+    (1 / 0).println
+  println("all link/merge join checks passed")

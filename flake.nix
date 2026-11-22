@@ -154,14 +154,19 @@
             buildPhase = ''
               runHook preBuild
               export HOME="$TMPDIR"
-              koka --include=src -o test tests/containers-tests.kk
+              koka --include=src -o containers-tests tests/containers-tests.kk
+              koka --include=src -o verify tests/verify.kk
+              # Run them here so `nix flake check` fails on a regression
+              # rather than merely producing a binary nobody executes.
+              ./containers-tests
+              ./verify
               runHook postBuild
             '';
 
             installPhase = ''
               runHook preInstall
               mkdir -p $out/bin
-              cp test $out/bin/
+              cp containers-tests verify $out/bin/
               runHook postInstall
             '';
 
