@@ -138,6 +138,38 @@
               platforms = pkgs.lib.platforms.unix;
             };
           };
+
+          tests = pkgs.stdenv.mkDerivation {
+            pname = "${pname}-tests";
+            inherit version;
+            src = srcFor pkgs;
+
+            nativeBuildInputs = [
+              pkgs.koka
+              pkgs.stdenv.cc
+            ];
+
+            dontConfigure = true;
+
+            buildPhase = ''
+              runHook preBuild
+              export HOME="$TMPDIR"
+              koka --include=src -o test tests/containers-tests.kk
+              runHook postBuild
+            '';
+
+            installPhase = ''
+              runHook preInstall
+              mkdir -p $out/bin
+              cp test $out/bin/
+              runHook postInstall
+            '';
+
+            meta = {
+              description = "Property tests for the containers library";
+              platforms = pkgs.lib.platforms.unix;
+            };
+          };
         }
       );
 
@@ -202,6 +234,7 @@
       checks = forAllSystems (
         pkgs: system: {
           build = self.packages.${system}.default;
+          tests = self.packages.${system}.tests;
         }
       );
     };
