@@ -27,35 +27,49 @@ For large sets (100k+ elements), this is the dominant cost.
 - `union(s1, s2) == s2` — builds full union then compares
 - Direct subset check would be O(m log n) or better
 
-## Plan
+## Implementation status
 
-### Phase 1: Add split-max (supporting change)
-- Add `split-max(tree)` to `wbt.kk` — mirror of `split-min`
+### Phase 1: split-max ✓
+- Added `split-max(tree)` to `wbt.kk`
 
-### Phase 2: Fix maximum/minimum (quick win)
-- Replace `tree.list.last`/`tree.list.head` with direct tree traversal
-- O(log n) instead of O(n)
+### Phase 2: maximum/minimum ✓
+- Fixed `maximum`/`minimum` to be O(log n) instead of O(n)
+- Now traverses tree directly instead of converting to list
 
-### Phase 3: Tree-direct foldl/foldr
-- Add `foldl`/`foldr` to `wbt.kk` that work directly on tree structure
-- Update `set.kk` and `map.kk` to use them
+### Phase 3: tree-direct foldl/foldr ✓
+- Added `tree-foldl` and `tree-foldr` to `wbt.kk`
+- Updated `set.kk` to use tree-direct folds
+- `map.kk` automatically benefits (uses `set.foldl`/`set.foldr`)
 
-### Phase 4: Join-based set algebra (highest impact)
-- Implement join-based `union`, `intersection`, `difference` in `wbt.kk`
-- O(m log(n/m + 1)) instead of O(n log m)
-- Uses `combine`, `split-min`, `split-max` that already exist
+### Phase 4: Join-based set algebra (partial)
+- Attempted join-based union/intersection/difference
+- Hit effect issues with recursive implementations
+- Simplified to fold-based versions using tree-direct foldl
+- **Result**: ~6% improvement (2.43s vs 2.57s)
+- **Future work**: Resolve effect issues to get O(m log(n/m + 1)) complexity
 
-### Phase 5: Optimize is-subset-of
+### Phase 5: is-subset-of ✓
 - Direct subset check without building union
+- O(m log n) instead of O(n log m)
 
-### Phase 6: Benchmark and measure
-- Add benchmark suite comparing old vs new implementations
-- Measure speedup on large sets (100k, 500k, 1M elements)
+### Phase 6: Benchmark ✓
+- Added `tests/bench.kk` with union/intersection/difference/max/min/fold benchmarks
 
-## Implementation order
-1. split-max (5 min)
-2. maximum/minimum (10 min)
-3. foldl/foldr (20 min)
-4. union/intersection/difference (1-2 hours)
-5. is-subset-of (15 min)
-6. Benchmarks (30 min)
+## Remaining work
+
+### Join-based set algebra (high impact)
+The current fold-based union/intersection/difference are O(n log m).
+Join-based versions would be O(m log(n/m + 1)).
+
+**Blockers**: Effect type issues with recursive implementations.
+
+**Approach**: 
+1. Implement join-based union in wbt.kk
+2. Resolve effect issues (may need explicit effect annotations)
+3. Implement join-based intersection and difference
+4. Benchmark and verify correctness
+
+### Additional optimizations
+- `union-with` still uses list fold
+- `flatten` and `unions` could use join-based merge
+- Memory allocation reduction in hot paths
