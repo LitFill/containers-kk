@@ -356,6 +356,14 @@ pub fun cartesian-product(
 pub fun map(s : set<a>, f : a -> e b, ?cmp : (b, b) -> e order) : e set<b>
     s.list-op(_.map(f))
 
+// `map-monotonic(s, f)` is `map(s, f)` without the sort: it keeps the tree
+// shape and is O(n). The caller must guarantee that `f` is strictly monotone
+// with respect to the set's ordering (`x < y` implies `f x < f y`), otherwise
+// the result is not a valid set. Used by `map/map` and `map/bimap`, where the
+// keys are unchanged or documented to be strictly monotone.
+pub fun map-monotonic(s : set<a>, f : a -> e b) : e set<b>
+    s.tree.map-monotonic(f).Set
+
 // Lexicographical ordering of `either`.
 pub fun either/cmp(e1 : either<a, b>, e2 : either<a, b>, ?a/cmp : (a, a) -> e order, ?b/cmp : (b, b) -> e order) : e order
     match (e1, e2)

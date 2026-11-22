@@ -9,6 +9,9 @@ val small = 1000
 val medium = 10000
 val large = 100000
 
+fun bump(x : int) : int
+  x + 1
+
 fun main()
   println("=== Union benchmark ===")
   val s1 = list(1, large).set
@@ -58,3 +61,8 @@ fun main()
     acc := acc + s1[ix * 100].default(0)
     ix := ix + 1
   println("1000 lookups sum: " ++ acc.show)
+
+  println("\n=== Map benchmark ===")
+  val m : map<int, int> = list(1, large).foldl((empty : map<int, int>)) fn(z, x) z.insert(x, x)
+  val m2 = m.map(bump)
+  println("map size: " ++ m2.size.show ++ "  sum: " ++ m2.foldl(0, fn(z, v) z + v).show)

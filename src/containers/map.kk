@@ -640,9 +640,6 @@ pub fun symmetric-difference(
 pub fun disjoint(m : map<k, v>, n : map<k, w>, ?cmp : (k, k) -> e order) : e bool
     m.intersection(n).is-empty
 
-fun set/fmap(s : set<a>, f : a -> e b, ?cmp : (b, b) -> e order) : e set<b>
-    set/map(s, f)
-
 // Given maps `bc` and `ab`, relate the keys of `ab` to the values of `bc`, by
 // using the values of `ab` as keys for lookups in `bc`.
 //
@@ -658,15 +655,9 @@ pub fun compose(
 ) : e map<a, c>
     ab.foldl-with-key(empty) fn(z, a, b) bc[b].maybe(z, z.insert(a, _))
 
-fun tuple2/first((a, b) : (a, b), f : a -> e c) : e (c, b)
-    (f(a), b)
-
-fun tuple2/second((a, b) : (a, b), f : b -> e c) : e (a, c)
-    (a, f(b))
-
 // Map a function over all values in the map.
 pub fun map(m : map<k, v>, f : v -> e w, ?cmp : (k, k) -> e order) : e map<k, w>
-    m.set.fmap(_.second(f)).Map
+    m.set.map-monotonic(fn((k, v)) (k, f(v))).Map
 
 // Other name for `map`.
 pub fun fmap(m : map<k, v>, f : v -> e w, ?cmp : (k, k) -> e order) : e map<k, w>
@@ -674,7 +665,7 @@ pub fun fmap(m : map<k, v>, f : v -> e w, ?cmp : (k, k) -> e order) : e map<k, w
 
 // Map a function that depends on the key over all values in the map.
 pub fun map-with-key(m : map<k, v>, f : (k, v) -> e w, ?cmp : (k, k) -> e order) : e map<k, w>
-    m.set.fmap(fn((k, v)) (k, f(k, v))).Map
+    m.set.map-monotonic(fn((k, v)) (k, f(k, v))).Map
 
 // Thread an accumulating argument through the map in ascending order of keys.
 //
@@ -750,9 +741,7 @@ pub fun map-keys-with(
 // increasing in the keys. That is, for keys `kx` and `ky` and values `x` and
 // `y`, if `kx < ky` then `fst(f(kx, x)) < fst(f(ky, y))`.
 pub fun bimap(m : map<k, v>, f : (k, v) -> e (l, w), ?cmp : (l, l) -> e order) : e map<l, w>
-    m.foldl-with-key(empty) fn(z, k, v)
-        val (l, w) = f(k, v)
-        z.insert(l, w)
+    m.set.map-monotonic(fn((k, v)) f(k, v)).Map
 
 // Fold a map from the left.
 // Since `foldl` is tail recursive, it is preferred over `foldr` when using an
