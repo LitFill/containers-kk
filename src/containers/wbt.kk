@@ -198,6 +198,14 @@ pub fun split-min(tree, ?params)
             val (x', l') = split-min(l)
             (x', balance-left(x, l', r))
 
+pub fun split-max(tree, ?params)
+    match tree
+        Leaf -> invariant("split-max: found a Leaf")
+        Node(x, l, Leaf) -> (x, l)
+        Node(x, l, r) ->
+            val (x', r') = split-max(r)
+            (x', balance-right(x, l, r'))
+
 pub fun del-max(tree, ?params)
     match tree
         Leaf -> invariant("del-max: found a Leaf")
@@ -213,8 +221,47 @@ pub fun combine(t1: tree<a>, t2: tree<a>, ?params): tree<a>
     then val (x, l) = del-max(t1)   in balance-left(x,  l,  t2)
     else val (x, r) = split-min(t2) in balance-right(x, t1, r)
 
+// Split a tree into elements less than and greater than a pivot.
+// The pivot itself is excluded from both results.
+fun split(tree : tree<a>, pivot : a, ?cmp : (a, a) -> e order) : e (tree<a>, tree<a>)
+    match tree
+        Leaf -> (Leaf, Leaf)
+        Node(x, l, r) ->
+            val c = cmp(x, pivot)
+            if c == Lt
+            then
+                val (l1, r1) = split(r, pivot)
+                (insert(x, l1), r1)
+            elif c == Gt
+            then
+                val (l1, r1) = split(l, pivot)
+                (l1, insert(x, r1))
+            else
+                (l, r)
+
 pub fun union(t1 : tree<a>, t2 : tree<a>, ?cmp : (a, a) -> e order, ?params : params) : e tree<a>
-    t1.list.foldl(t2, insert'(_, _))
+    if t1.is-leaf then t2
+    elif t2.is-leaf then t1
+    else
+        t1.foldl(t2) fn(acc, x) insert(x, acc)
+
+pub fun intersection(t1 : tree<a>, t2 : tree<a>, ?cmp : (a, a) -> e order, ?params : params) : e tree<a>
+    if t1.is-leaf then Leaf
+    elif t2.is-leaf then Leaf
+    elif t1.size > t2.size
+    then
+        t1.foldl(Leaf) fn(acc, x)
+            if x.member(t2) then insert(x, acc) else acc
+    else
+        t2.foldl(Leaf) fn(acc, x)
+            if x.member(t1) then insert(x, acc) else acc
+
+pub fun difference(t1 : tree<a>, t2 : tree<a>, ?cmp : (a, a) -> e order, ?params : params) : e tree<a>
+    if t1.is-leaf then Leaf
+    elif t2.is-leaf then t1
+    else
+        t1.foldl(t1) fn(acc, x)
+            if x.member(t2) then delete(x, acc) else acc
 
 pub fun union-with(
     t1 : tree<a>, t2 : tree<a>,
@@ -237,8 +284,24 @@ pub fun list(tree)
         Node(x, l, r) -> go(l, Cons(x, go(r, acc)))
     go(tree, Nil)
 
+pub fun foldl(tree : tree<a>, z : b, f : (b, a) -> e b) : e b
+    match tree
+        Leaf -> z
+        Node(x, l, r) ->
+            val z1 = l.foldl(z, f)
+            val z2 = f(z1, x)
+            r.foldl(z2, f)
+
+pub fun foldr(tree : tree<a>, z : b, f : (a, b) -> e b) : e b
+    match tree
+        Leaf -> z
+        Node(x, l, r) ->
+            val z1 = r.foldr(z, f)
+            val z2 = f(x, z1)
+            l.foldr(z2, f)
+
 pub fun list/tree(xs, ?cmp, ?params)
-    xs.foldl(Leaf) fn(z, x)
+    list/foldl(xs, Leaf) fn(z, x)
         x.insert(z)
 
 pub fun height(tree)
@@ -275,10 +338,16 @@ pub fun map-monotonic(tree, f)
         Node(x, l, r, s) -> Node(f(x), l.map-monotonic(f), r.map-monotonic(f), s)
 
 pub fun maximum(tree : tree<a>) : maybe<a>
-    tree.list.last
+    match tree
+        Leaf -> Nothing
+        Node(x, Leaf, _) -> Just(x)
+        Node(_, _, r) -> r.maximum
 
 pub fun minimum(tree : tree<a>) : maybe<a>
-    tree.list.head
+    match tree
+        Leaf -> Nothing
+        Node(x, Leaf, _) -> Just(x)
+        Node(_, l, _) -> l.minimum
 
 pub fun find-lt(tree : tree<a>, x : b, ?cmp : (a, b) -> e order) : e maybe<a>
     match tree

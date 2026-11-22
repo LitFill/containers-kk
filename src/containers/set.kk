@@ -238,7 +238,7 @@ pub fun (+)(s1 : set<a>, s2 : set<a>, ?cmp : (a, a) -> e order) : e set<a>
 
 // `s1.is-subset-of(s2)` indicates whether s1 is a subset of s2.
 pub fun is-subset-of(s1 : set<a>, s2 : set<a>, ?cmp : (a, a) -> e order) : e bool
-    union(s1, s2) == s2 // todo: refactor
+    s1.tree.foldl(True) fn(acc, x) acc && x.member(s2.tree, ?cmp)
 
 // `s1.is-proper-subset-of(s2)` indicates whether s1 is a proper subset of s2.
 pub fun is-proper-subset-of(s1 : set<a>, s2 : set<a>, ?cmp : (a, a) -> e order) : e bool
@@ -253,13 +253,13 @@ pub fun unions(ss : list<set<a>>, ?cmp : (a, a) -> e order) : e set<a>
 // Since `foldl` is tail recursive, it is preferred over `foldr` when using an
 // associative function `f`
 pub fun foldl(s : set<a>, z : b, f : (b, a) -> e b) : e b
-    s.list.foldl(z, f)
+    s.tree.foldl(z, f)
 
 // Fold a set from the right, i.e. `foldr([1,2].set,0,(+)) == 1+(2+0)`.
 // Note, `foldr` is less efficient than `foldl` as it reverses the
 // list representation first.
 pub fun foldr(s : set<a>, z : b, f : (a, b) -> e b) : e b
-    s.list.foldr(z, f)
+    s.tree.foldr(z, f)
 
 // Flatten the set (e.g. concatenate them) using `union`.
 pub fun flatten(ss : set<set<a>>, ?cmp : (a, a) -> e order) : e set<a>
